@@ -1,0 +1,74 @@
+<html>
+  <head>
+  </head>
+  <body>
+    <canvas id="canv" width=1000 height=500>
+    <script src="moving_window.js"></script>
+    <script src="depth_chart.js"></script>
+    <script>
+        // A simple example chart. Generate random volume and price changes.
+
+        // Use a ticksize of 10
+	exampleChart = new DepthChart ("canv", function(x){return x*10});
+        var time = 0;
+        // Initial spread of one tick, tick 1001 is empty.
+        var btick = 1000;
+        var bvol = 1.00;
+        var avol = 1.00;
+        var atick = 1002
+
+	function dataLoop () {
+		var r = Math.random ();
+		// A for prices to approach each other.
+		if (atick-btick > 1 && r < 0.03) {
+				btick++;
+				bvol = Math.random () * 0.80;
+		} else if(atick-btick > 1 && r < 0.06) {
+				atick--
+				avol = Math.random () * 0.80;
+		} else {
+			r = Math.random ();
+			// Change the volume on one side. Add a small chance that change was due to a trade. If volume reaches zero, the spread increases.
+			if(r < 0.5) {
+				var chg = (Math.random ()-0.51)*0.40;
+				if (chg < 0 && r < 0.03) {
+					var trade = {"time":time,sellerActive:false,"volume":-chg,tick:atick};
+					exampleChart.add(trade);
+				}
+				avol += chg;
+				if (avol < 0) {
+					atick++;
+					avol = Math.random () * 0.80;
+				}
+			} else {
+				var chg = (Math.random ()-0.51)*0.40;
+				if (chg < 0 && r > 0.97) {
+					var trade = {"time":time,sellerActive:true,"volume":-chg,tick:btick};
+					exampleChart.add(trade);
+				}
+				bvol += chg;
+				if (bvol < 0) {
+					btick--;
+					bvol = Math.random () * 0.80;
+				}
+			}
+		}
+
+
+        	var o = {"asks":[[atick*10,atick,avol]],"bids":[[btick*10,btick,bvol]], "time":time};
+        	exampleChart.add (o);
+
+		
+		var t = Math.random ()*600;
+        	time+=t*1000000; // Convert from millis to nanos
+        	setTimeout(dataLoop, t);
+	}
+        function chartLoop () {
+        	exampleChart.render ();
+		setTimeout(chartLoop, 50);
+        }
+	dataLoop ();
+        chartLoop ();
+    </script>
+  </body>
+</html>
